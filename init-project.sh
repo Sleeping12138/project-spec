@@ -62,11 +62,67 @@ if [ ! -d "$TARGET_DIR" ]; then
     exit 1
 fi
 
+# 读取菜单选项；整次输入有效后才交给调用方，避免保留无效输入中的部分选择。
+read_menu_choices() {
+    local max_choice="$1"
+    local choice valid
+
+    while true; do
+        MENU_CHOICES=()
+        if ! IFS=$' \t' read -r -a MENU_CHOICES; then
+            echo -e "${RED}输入已结束，已停止初始化。${NC}" >&2
+            exit 1
+        fi
+
+        valid=yes
+        if [ ${#MENU_CHOICES[@]} -eq 0 ]; then
+            valid=no
+        fi
+
+        for choice in "${MENU_CHOICES[@]}"; do
+            # 先校验格式和长度，避免非数字报错及超大整数溢出。
+            if ! [[ "$choice" =~ ^[1-9][0-9]*$ ]] || [ ${#choice} -gt ${#max_choice} ]; then
+                valid=no
+                break
+            fi
+            if [ "$choice" -gt "$max_choice" ]; then
+                valid=no
+                break
+            fi
+            if [ "$choice" -eq "$max_choice" ] && [ ${#MENU_CHOICES[@]} -gt 1 ]; then
+                valid=no
+                break
+            fi
+        done
+
+        if [ "$valid" = "yes" ]; then
+            return 0
+        fi
+        echo -e "${RED}无效选项，请重新选择（1-${max_choice}）${NC}"
+        echo "多选用空格分隔；跳过只能单独选择。"
+    done
+}
+
+read_yes_no() {
+    while true; do
+        if ! read -r YES_NO_CHOICE; then
+            echo -e "${RED}输入已结束，已停止初始化。${NC}" >&2
+            exit 1
+        fi
+        case "$YES_NO_CHOICE" in
+            y|Y) YES_NO_CHOICE=y; return 0 ;;
+            n|N) YES_NO_CHOICE=n; return 0 ;;
+            *) echo -e "${RED}无效选项，请重新输入 y 或 n${NC}" ;;
+        esac
+    done
+}
+
 # 检查是否已经初始化
 if [ -f "$TARGET_DIR/AGENTS.md" ]; then
     echo -e "${YELLOW}警告: 检测到已存在 AGENTS.md${NC}"
     echo -e "是否继续？这将覆盖现有配置。(y/n)"
-    read -r continue_init
+    read_yes_no
+    continue_init="$YES_NO_CHOICE"
     if [ "$continue_init" != "y" ]; then
         echo "已取消初始化"
         exit 0
@@ -99,6 +155,10 @@ if [ -f "$TARGET_DIR/AGENTS.md" ]; then
 fi
 
 # 复制 base 目录内容（包括隐藏文件）
+# 将旧模式的 Skills 目录链接替换为实体目录，避免向链接目标写入。
+if [ -L "$TARGET_DIR/.claude/skills" ]; then
+    rm "$TARGET_DIR/.claude/skills"
+fi
 cp -r "$SPEC_DIR/base/." "$TARGET_DIR/"
 echo -e "${GREEN}✓ 基础规范已复制${NC}"
 
@@ -151,15 +211,13 @@ if [ ${#AVAILABLE_BACKEND[@]} -gt 0 ]; then
     done
     echo "$((${#AVAILABLE_BACKEND[@]}+1))) 跳过"
 
-    read -r backend_choice
+    read_menu_choices "$((${#AVAILABLE_BACKEND[@]}+1))"
 
-    for choice in $backend_choice; do
+    for choice in "${MENU_CHOICES[@]}"; do
         if [ "$choice" -le "${#AVAILABLE_BACKEND[@]}" ] && [ "$choice" -gt 0 ]; then
             SELECTED_BACKEND+=("${AVAILABLE_BACKEND[$((choice-1))]}")
         elif [ "$choice" -eq "$((${#AVAILABLE_BACKEND[@]}+1))" ]; then
             : # 跳过
-        else
-            echo -e "${RED}无效选项: $choice${NC}"
         fi
     done
 else
@@ -177,15 +235,13 @@ if [ ${#AVAILABLE_FRONTEND[@]} -gt 0 ]; then
     done
     echo "$((${#AVAILABLE_FRONTEND[@]}+1))) 跳过"
 
-    read -r frontend_choice
+    read_menu_choices "$((${#AVAILABLE_FRONTEND[@]}+1))"
 
-    for choice in $frontend_choice; do
+    for choice in "${MENU_CHOICES[@]}"; do
         if [ "$choice" -le "${#AVAILABLE_FRONTEND[@]}" ] && [ "$choice" -gt 0 ]; then
             SELECTED_FRONTEND+=("${AVAILABLE_FRONTEND[$((choice-1))]}")
         elif [ "$choice" -eq "$((${#AVAILABLE_FRONTEND[@]}+1))" ]; then
             : # 跳过
-        else
-            echo -e "${RED}无效选项: $choice${NC}"
         fi
     done
 else
@@ -203,15 +259,13 @@ if [ ${#AVAILABLE_MIDDLEWARE[@]} -gt 0 ]; then
     done
     echo "$((${#AVAILABLE_MIDDLEWARE[@]}+1))) 跳过"
 
-    read -r middleware_choice
+    read_menu_choices "$((${#AVAILABLE_MIDDLEWARE[@]}+1))"
 
-    for choice in $middleware_choice; do
+    for choice in "${MENU_CHOICES[@]}"; do
         if [ "$choice" -le "${#AVAILABLE_MIDDLEWARE[@]}" ] && [ "$choice" -gt 0 ]; then
             SELECTED_MIDDLEWARE+=("${AVAILABLE_MIDDLEWARE[$((choice-1))]}")
         elif [ "$choice" -eq "$((${#AVAILABLE_MIDDLEWARE[@]}+1))" ]; then
             : # 跳过
-        else
-            echo -e "${RED}无效选项: $choice${NC}"
         fi
     done
 else
@@ -278,144 +332,20 @@ done
 echo -e "\n${BLUE}[4/6] 配置选项${NC}"
 echo ""
 
-# 是否生成快速参考
-echo -e "${YELLOW}是否生成合并的规则快速参考？${NC}"
-echo "  (将所有规则合并为一个文件，减少 AI 读取次数)"
-echo "  (y/n)"
-read -r gen_quick_ref
+# 固定关闭快速参考生成和 Git 约束简化，不再询问。
+gen_quick_ref=n
+simplify_git=n
 
-# 是否简化 Git 约束
-echo -e "\n${YELLOW}是否简化重复的 Git 约束描述？${NC}"
-echo "  (Claude Code 已有默认行为，移除冗余说明)"
-echo "  (y/n)"
-read -r simplify_git
-
-# Skills 入口处理方式
-echo -e "\n${YELLOW}Skills 入口处理方式:${NC}"
-if [[ "$OS_TYPE" == "windows" ]]; then
-    echo -e "${YELLOW}注意: Windows 下符号链接需要管理员权限或开发者模式${NC}"
-fi
-echo "1) 复制两份 (兼容性最好，但需双重维护)"
-echo "2) 符号链接 (统一维护，Windows 可能需要特殊权限)"
-echo "3) 生成引用入口 (推荐，薄入口引用主文件)"
-read -r skill_mode
+# Skills 固定使用复制两份。
+skill_mode=1
 
 # 5. 应用配置
 echo -e "\n${BLUE}[5/6] 应用配置...${NC}"
 
-# 生成快速参考
-if [ "$gen_quick_ref" = "y" ]; then
-    echo -e "生成快速参考..."
-    mkdir -p "$TARGET_DIR/.claude"
-    {
-        echo "# 规则快速参考"
-        echo ""
-        echo "> 此文件由 init-project.sh 自动生成，包含所有启用的规则。"
-        echo "> 如需修改规则，请编辑 docs/rules/ 下的源文件，然后重新运行脚本。"
-        echo ""
-        echo "---"
-        echo ""
-
-        # 合并通用规则
-        if [ -f "$TARGET_DIR/docs/rules/common.md" ]; then
-            cat "$TARGET_DIR/docs/rules/common.md"
-            echo -e "\n---\n"
-        fi
-
-        # 合并技术栈规则
-        for rule_file in "$TARGET_DIR/docs/rules/tech-stack"/*.md; do
-            if [ -f "$rule_file" ]; then
-                cat "$rule_file"
-                echo -e "\n---\n"
-            fi
-        done
-
-    } > "$TARGET_DIR/.claude/quick-reference.md"
-
-    # 在 CLAUDE.md 中添加快速参考提示
-    if [ -f "$TARGET_DIR/CLAUDE.md" ]; then
-        # 使用临时文件避免 sed 差异
-        {
-            echo "# 快速开始"
-            echo ""
-            echo "对于简单任务，可先读取 @.claude/quick-reference.md 获取所有规则。"
-            echo "复杂任务仍建议按导航逐个读取具体规则文件。"
-            echo ""
-            echo "---"
-            echo ""
-            cat "$TARGET_DIR/CLAUDE.md"
-        } > "$TARGET_DIR/CLAUDE.md.tmp"
-        mv "$TARGET_DIR/CLAUDE.md.tmp" "$TARGET_DIR/CLAUDE.md"
-    fi
-
-    echo -e "${GREEN}✓ 快速参考已生成${NC}"
-fi
-
-# 简化 Git 约束
-if [ "$simplify_git" = "y" ]; then
-    echo -e "简化 Git 约束..."
-    if [ -f "$TARGET_DIR/AGENTS.md" ]; then
-        safe_sed '/以及通过别名、脚本、子代理或其他 Git 命令间接暂存、创建提交。/d' "$TARGET_DIR/AGENTS.md"
-        safe_sed '/流程建议和工具输出中的提交步骤也不构成授权。/d' "$TARGET_DIR/AGENTS.md"
-    fi
-    echo -e "${GREEN}✓ Git 约束已简化${NC}"
-fi
-
-# 处理 Skills 入口
-echo -e "配置 Skills 入口..."
-case $skill_mode in
-    2)
-        # 符号链接方式
-        if [[ "$OS_TYPE" == "windows" ]]; then
-            echo -e "${YELLOW}警告: 在 Windows 上创建符号链接...${NC}"
-            # 尝试创建符号链接，失败则降级到复制
-            cd "$TARGET_DIR/.claude"
-            if ln -s ../.agents/skills skills 2>/dev/null; then
-                echo -e "${GREEN}✓ 已创建符号链接${NC}"
-            else
-                echo -e "${YELLOW}! 符号链接创建失败，已回退到复制两份模式${NC}"
-                echo -e "${YELLOW}  (需要管理员权限或启用开发者模式)${NC}"
-            fi
-            cd - > /dev/null
-        else
-            rm -rf "$TARGET_DIR/.claude/skills"
-            cd "$TARGET_DIR/.claude"
-            ln -s ../.agents/skills skills
-            cd - > /dev/null
-            echo -e "${GREEN}✓ 已创建符号链接${NC}"
-        fi
-        ;;
-    3)
-        # 生成引用入口
-        rm -rf "$TARGET_DIR/.claude/skills"
-        mkdir -p "$TARGET_DIR/.claude/skills"
-
-        for skill_dir in "$TARGET_DIR/.agents/skills"/*; do
-            if [ -d "$skill_dir" ]; then
-                skill_name=$(basename "$skill_dir")
-                mkdir -p "$TARGET_DIR/.claude/skills/$skill_name"
-
-                # 提取 frontmatter
-                skill_desc=$(grep "^description:" "$skill_dir/SKILL.md" | head -1)
-
-                # 生成薄入口
-                cat > "$TARGET_DIR/.claude/skills/$skill_name/SKILL.md" << EOF
----
-name: $skill_name
-$skill_desc
----
-
-@../../.agents/skills/$skill_name/SKILL.md
-EOF
-            fi
-        done
-        echo -e "${GREEN}✓ 已生成引用入口${NC}"
-        ;;
-    *)
-        # 默认保持复制的双份结构
-        echo -e "${GREEN}✓ 保持默认双份结构${NC}"
-        ;;
-esac
+# 将完整 Skills 正文复制到 Claude 目录，替换模板或旧配置中的引用入口。
+mkdir -p "$TARGET_DIR/.claude/skills"
+cp -r "$TARGET_DIR/.agents/skills/." "$TARGET_DIR/.claude/skills/"
+echo -e "${GREEN}✓ Skills 已复制两份${NC}"
 
 # 更新 AGENTS.md 中的启用规则列表
 if [ -n "$ENABLED_RULES" ]; then
@@ -523,7 +453,8 @@ if [ -f "$SPEC_DIR/openspec-config.example.yaml" ]; then
     if [ -f "$TARGET_DIR/openspec/config.yaml" ]; then
         echo -e "\n${YELLOW}检测到现有 OpenSpec 配置${NC}"
         echo -e "是否合并示例配置？(y/n)"
-        read -r merge_openspec
+        read_yes_no
+        merge_openspec="$YES_NO_CHOICE"
 
         if [ "$merge_openspec" = "y" ]; then
             # 简单追加方式（安全但可能重复）
@@ -555,7 +486,6 @@ echo -e "  • 已复制基础规范到: $TARGET_DIR"
 [ ${#SELECTED_FRONTEND[@]} -gt 0 ] && echo -e "  • 前端技术栈: ${SELECTED_FRONTEND[*]}"
 [ ${#SELECTED_MIDDLEWARE[@]} -gt 0 ] && echo -e "  • 中间件: ${SELECTED_MIDDLEWARE[*]}"
 [ -n "$BUILD_CMD" ] && echo -e "  • 测试命令: $BUILD_CMD"
-[ "$gen_quick_ref" = "y" ] && echo -e "  • 已生成快速参考: .claude/quick-reference.md"
 
 echo ""
 echo -e "${BLUE}下一步建议:${NC}"
