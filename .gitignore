@@ -1,0 +1,23 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Backup files
+*.bak
+*.backup.*
+
+# Logs
+*.log
+.claude/init-log.txt
+
+# Test projects
+test-project/
+tmp/

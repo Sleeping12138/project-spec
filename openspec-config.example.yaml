@@ -1,0 +1,33 @@
+# 合并示例：在 openspec init 之后按需加入现有 config.yaml，保留原配置。
+# 若原项目已有 schema，不要用此值覆盖它。
+schema: spec-driven
+
+context: |
+  项目规范入口为根目录 AGENTS.md，具体开发约束位于 docs/rules/。
+  开始任务先读取入口，再按实际改动读取相关规则与已启用的技术栈模块。
+  技术栈、框架版本和验证命令以项目实际配置及 AGENTS.md 的项目事实表为准。
+  实施中按触发条件使用 project-bugfix、project-code-review、project-verification、project-docs-update。
+  项目授权和 Git 操作限制统一遵守根 AGENTS.md；同样适用于归档和子代理。
+
+rules:
+  proposal:
+    - 说明范围、非目标、主要风险和兼容性影响。
+  specs:
+    - 描述可观察行为及可验证场景，不把内部实现步骤写成产品行为要求。
+  design:
+    - 说明适用项目规则及跨边界影响；规则与需求冲突时明确列出。
+  tasks:
+    - 按风险为实现任务安排验证方式，沿用项目现有测试体系。
+    - 安排必要的代码与安全审查、文档影响检查。
+    - 任务完成需有对应证据；依赖缺失或目标环境未验证应明确保留。
+
+# 以下 operation guidance 已在 OpenSpec 1.16.0 核对。
+# 若使用旧版，先检查其配置支持；context 与 AGENTS 仍作为项目入口。
+operations:
+  apply:
+    guidance:
+      - 按根 AGENTS.md 的触发条件使用项目排错、审查、验证和文档更新 Skills。
+      - 简单任务直接处理；复杂排查、跨模块修改或独立审查按需使用子代理。
+  archive:
+    guidance:
+      - 核对实际验证与文档结果，明确未完成事项；归档不构成 Git 暂存或提交授权。
