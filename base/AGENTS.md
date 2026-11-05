@@ -42,12 +42,15 @@
 
 | 条件 | Skill |
 | --- | --- |
+| 需求目标、范围、业务规则或验收标准有影响实施的关键歧义，或用户要求需求访谈 | [grill-me](.agents/skills/grill-me/SKILL.md) |
 | Bug、异常、测试失败、构建失败或行为不符 | [project-bugfix](.agents/skills/project-bugfix/SKILL.md) |
 | 相关代码修改完成，或用户要求代码/安全审查 | [project-code-review](.agents/skills/project-code-review/SKILL.md) |
 | 需要证明修复、任务完成或回归结果 | [project-verification](.agents/skills/project-verification/SKILL.md) |
 | 接口、配置、行为、操作方式或使用说明变化 | [project-docs-update](.agents/skills/project-docs-update/SKILL.md) |
 
 按本次差异和风险选择流程。一次任务已有有效审查或验证证据且之后无相关改动时直接复用；出现新改动或新疑点再补充。
+
+需求澄清先读取项目事实和现有 OpenSpec 内容，再针对无法自行查明的关键决策逐轮提问。明确的小改动和已有完整规格的实施直接处理；已确认内容不重复访谈。澄清结果沿用当前 OpenSpec 流程。
 
 ## OpenSpec 衔接
 
