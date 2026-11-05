@@ -492,7 +492,7 @@ echo -e "${BLUE}下一步建议:${NC}"
 echo -e "  1. 检查并完善 ${YELLOW}AGENTS.md${NC} 中的项目事实表"
 echo -e "  2. 验证测试命令: ${YELLOW}$BUILD_CMD${NC}"
 echo -e "  3. 在 Claude Code 中刷新会话或运行 ${YELLOW}/reload${NC}"
-echo -e "  4. 检查 Skills 是否正确加载: ${YELLOW}grill-me、project-*${NC}"
+echo -e "  4. 检查 Skills 是否正确加载: ${YELLOW}grill-me、grilling、project-*${NC}"
 echo ""
 
 # 创建初始化记录

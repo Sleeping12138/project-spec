@@ -6,7 +6,7 @@ context: |
   项目规范入口为根目录 AGENTS.md，具体开发约束位于 docs/rules/。
   开始任务先读取入口，再按实际改动读取相关规则与已启用的技术栈模块。
   技术栈、框架版本和验证命令以项目实际配置及 AGENTS.md 的项目事实表为准。
-  需求存在影响实施的关键歧义时使用 grill-me，先查项目事实再逐轮提问；已确认的规格直接复用，结论沿用当前 OpenSpec 流程。
+  需求澄清的自动触发条件与 proposal 衔接遵守根 AGENTS.md，使用上游原版 grilling；已确认结论直接复用。
   实施中按触发条件使用 project-bugfix、project-code-review、project-verification、project-docs-update。
   项目授权和 Git 操作限制统一遵守根 AGENTS.md；同样适用于归档和子代理。
 
@@ -27,7 +27,7 @@ rules:
 operations:
   apply:
     guidance:
-      - 实施中出现影响当前任务的需求歧义时使用 grill-me，仅澄清受影响的决策；已有完整规格时直接实施。
+      - 实施中出现影响当前任务的需求歧义时，按根 AGENTS.md 使用上游原版 grilling；确认共同理解后继续当前流程，已有完整规格时直接实施。
       - 按根 AGENTS.md 的触发条件使用项目排错、审查、验证和文档更新 Skills。
       - 简单任务直接处理；复杂排查、跨模块修改或独立审查按需使用子代理。
   archive:

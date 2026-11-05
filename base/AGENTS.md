@@ -42,7 +42,7 @@
 
 | 条件 | Skill |
 | --- | --- |
-| 需求目标、范围、业务规则或验收标准有影响实施的关键歧义，或用户要求需求访谈 | [grill-me](.agents/skills/grill-me/SKILL.md) |
+| 需求目标、范围、业务规则或验收标准有影响实施的关键歧义，且无法从项目资料自行消除，或用户要求需求访谈 | [grilling](.agents/skills/grilling/SKILL.md) |
 | Bug、异常、测试失败、构建失败或行为不符 | [project-bugfix](.agents/skills/project-bugfix/SKILL.md) |
 | 相关代码修改完成，或用户要求代码/安全审查 | [project-code-review](.agents/skills/project-code-review/SKILL.md) |
 | 需要证明修复、任务完成或回归结果 | [project-verification](.agents/skills/project-verification/SKILL.md) |
@@ -50,7 +50,11 @@
 
 按本次差异和风险选择流程。一次任务已有有效审查或验证证据且之后无相关改动时直接复用；出现新改动或新疑点再补充。
 
-需求澄清先读取项目事实和现有 OpenSpec 内容，再针对无法自行查明的关键决策逐轮提问。明确的小改动和已有完整规格的实施直接处理；已确认内容不重复访谈。澄清结果沿用当前 OpenSpec 流程。
+需求澄清先读取项目事实和现有 OpenSpec 内容，再按上游 `grilling` 的原版流程追问。自动触发直接使用 `grilling`；用户手动调用 `grill-me` 时，由其入口调用 `grilling`。两个 Skill 的 `SKILL.md` 保持上游原文，项目触发条件与 OpenSpec 衔接统一写在本入口。明确的小改动和已有完整规格的实施直接处理；已确认内容不重复访谈。
+
+若当前 Agent 没有 Skill 调用工具，直接读取并遵循对应的 `SKILL.md`。
+
+独立的需求澄清会话结束后，在对话中汇总已确认的结论，等待用户手动发起 OpenSpec proposal；不自动创建或修改 OpenSpec 变更，也不自动开始实施。用户随后发起 proposal 时复用本轮结论。若澄清发生在用户已发起的 OpenSpec 流程中，确认共同理解后继续当前流程，无需重新发起 proposal。
 
 ## OpenSpec 衔接
 
