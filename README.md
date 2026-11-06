@@ -20,6 +20,14 @@ Skill 源文件位于 `base/.agents/skills/grill-me/` 和 `base/.agents/skills/g
 
 这里的 `base/` 是分发模板，并不会仅因文件存在就让当前模板仓库会话加载 Skill；业务项目需运行上面的初始化命令，已有项目更新时注意脚本会覆盖模板配置并核对已有自定义内容。若新 Skill 未出现在工具的技能列表中，刷新或重启会话。
 
+模板同时内置前端 Skill `frontend-design`，在 `base/.agents/skills/` 和 `base/.claude/skills/` 保存完整副本，随初始化脚本分发，`SKILL.md` 保持上游原文：
+
+| Skill | 自动触发条件 | 固定上游版本 |
+| --- | --- | --- |
+| `frontend-design` | 创建或重新设计页面、组件、布局及视觉样式 | [anthropics/skills · ca45fc4](https://github.com/anthropics/skills/tree/ca45fc496a3436251f191354091d557da31c15b5/skills/frontend-design) |
+
+`frontend-design` 附带上游 `LICENSE.txt`。项目触发条件统一维护在 `base/AGENTS.md`；前端设计遵循业务项目已有设计系统和已确认需求。升级时审查上游差异，并同步更新两份副本及此处版本链接。
+
 已有 `openspec/config.yaml` 时，初始化的“合并示例配置”请选择 `n`，再把示例中新增的 `grilling` context 和 apply guidance 手动合入原有对应位置。现有脚本采用整份追加，可能产生重复顶层键；不要直接追加整个示例。
 
 脚本不再询问“生成合并的规则快速参考”和“简化重复的 Git 约束描述”，两项固定为 n：不生成快速参考，保留完整 Git 约束。

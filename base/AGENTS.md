@@ -43,12 +43,15 @@
 | 条件 | Skill |
 | --- | --- |
 | 需求目标、范围、业务规则或验收标准有影响实施的关键歧义，且无法从项目资料自行消除，或用户要求需求访谈 | [grilling](.agents/skills/grilling/SKILL.md) |
+| 创建或重新设计页面、组件、布局及视觉样式 | [frontend-design](.agents/skills/frontend-design/SKILL.md) |
 | Bug、异常、测试失败、构建失败或行为不符 | [project-bugfix](.agents/skills/project-bugfix/SKILL.md) |
 | 相关代码修改完成，或用户要求代码/安全审查 | [project-code-review](.agents/skills/project-code-review/SKILL.md) |
 | 需要证明修复、任务完成或回归结果 | [project-verification](.agents/skills/project-verification/SKILL.md) |
 | 接口、配置、行为、操作方式或使用说明变化 | [project-docs-update](.agents/skills/project-docs-update/SKILL.md) |
 
 按本次差异和风险选择流程。一次任务已有有效审查或验证证据且之后无相关改动时直接复用；出现新改动或新疑点再补充。
+
+前端设计与实现使用 `frontend-design`，遵循项目现有设计系统、技术栈与已确认需求。该 Skill 的正文保持上游原文，项目触发条件统一放在本入口。
 
 需求澄清先读取项目事实和现有 OpenSpec 内容，再按上游 `grilling` 的原版流程追问。自动触发直接使用 `grilling`；用户手动调用 `grill-me` 时，由其入口调用 `grilling`。两个 Skill 的 `SKILL.md` 保持上游原文，项目触发条件与 OpenSpec 衔接统一写在本入口。明确的小改动和已有完整规格的实施直接处理；已确认内容不重复访谈。
 
